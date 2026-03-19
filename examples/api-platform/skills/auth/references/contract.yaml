@@ -1,0 +1,186 @@
+models:
+  User:
+    fields:
+      id:
+        type: uuid
+        description: Primary key, UUIDv4
+      email:
+        type: string
+        format: email
+        required: true
+        description: Unique; used as login identifier
+      passwordHash:
+        type: string
+        nullable: true
+        description: bcrypt hash; null for OAuth-only accounts; never exposed in responses
+      status:
+        type: enum
+        values: [active, suspended, deleted]
+        default: active
+      createdAt:
+        type: datetime
+      lastLoginAt:
+        type: datetime
+        nullable: true
+
+  ApiKey:
+    fields:
+      id:
+        type: uuid
+      userId:
+        type: uuid
+        description: FK → users.id
+      name:
+        type: string
+        maxLength: 100
+        description: Human-readable label for the key
+      keyHash:
+        type: string
+        description: SHA-256 of the raw key; never returned in responses
+      prefix:
+        type: string
+        maxLength: 8
+        description: First 8 characters of raw key; safe to display and log
+      scopes:
+        type: array
+        items: string
+        description: List of resource:action scope strings this key grants
+      lastUsedAt:
+        type: datetime
+        nullable: true
+      expiresAt:
+        type: datetime
+        nullable: true
+        description: Null means no expiry
+      revokedAt:
+        type: datetime
+        nullable: true
+        description: Set when key is revoked; null means active
+      createdAt:
+        type: datetime
+
+routes:
+  - method: POST
+    path: /api/auth/register
+    description: Create a new user account with email and password
+    body:
+      email:
+        type: string
+        required: true
+      password:
+        type: string
+        required: true
+        minLength: 8
+    response:
+      user: User
+      accessToken:
+        type: string
+        description: RS256 JWT, 1-hour expiry
+      refreshToken:
+        type: string
+        description: Opaque 32-byte hex string, 30-day expiry
+
+  - method: POST
+    path: /api/auth/login
+    description: Authenticate with email and password
+    body:
+      email:
+        type: string
+        required: true
+      password:
+        type: string
+        required: true
+    response:
+      accessToken: string
+      refreshToken: string
+      expiresIn:
+        type: integer
+        description: Seconds until access token expires (always 3600)
+
+  - method: POST
+    path: /api/auth/refresh
+    description: Exchange a valid refresh token for a new access + refresh token pair
+    body:
+      refreshToken:
+        type: string
+        required: true
+    response:
+      accessToken: string
+      refreshToken: string
+      expiresIn: integer
+
+  - method: POST
+    path: /api/auth/logout
+    description: Revoke the current access token and associated refresh token
+    auth: Bearer token required
+    response:
+      revoked: boolean
+
+  - method: GET
+    path: /api/auth/oauth/:provider
+    description: Initiate OAuth2 authorization code flow; redirects to provider
+    pathParams:
+      provider:
+        type: enum
+        values: [github, google, microsoft]
+    response: 302 redirect to provider authorization URL
+
+  - method: GET
+    path: /api/auth/oauth/:provider/callback
+    description: OAuth2 callback; exchanges authorization code for tokens
+    queryParams:
+      - name: code
+        type: string
+        required: true
+      - name: state
+        type: string
+        required: true
+    response:
+      accessToken: string
+      refreshToken: string
+      isNewUser:
+        type: boolean
+        description: True if a new User record was created
+
+  - method: GET
+    path: /api/auth/me
+    description: Return the authenticated user's profile
+    auth: Bearer token or API key
+    response: User
+
+  - method: POST
+    path: /api/keys
+    description: Create a new API key; raw key returned once and not stored
+    auth: Bearer token required
+    body:
+      name:
+        type: string
+        required: true
+      scopes:
+        type: array
+        items: string
+        required: true
+      expiresAt:
+        type: datetime
+        required: false
+    response:
+      key: ApiKey
+      rawKey:
+        type: string
+        description: Full API key — shown only at creation, not retrievable afterward
+
+  - method: GET
+    path: /api/keys
+    description: List API keys for the authenticated user (metadata only, no raw keys)
+    auth: Bearer token required
+    response:
+      items:
+        type: array
+        items: ApiKey
+
+  - method: DELETE
+    path: /api/keys/:id
+    description: Revoke an API key immediately
+    auth: Bearer token required
+    response:
+      revoked: boolean

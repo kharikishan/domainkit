@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["version", "skillsDir", "sourceRoot", "platform"],
+  "properties": {
+    "version": { "type": "string" },
+    "skillsDir": { "type": "string" },
+    "sourceRoot": { "type": "string" },
+    "platform": { "type": "string", "enum": ["claude", "codex", "vscode", "cursor", "generic"] },
+    "sync": {
+      "type": "object",
+      "properties": {
+        "targets": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "drift": {
+      "type": "object",
+      "properties": {
+        "threshold": { "type": "number", "minimum": 1 },
+        "strategies": { "type": "array", "items": { "type": "string", "enum": ["staleness", "file-coverage", "api-routes", "model-diff"] } }
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "defaultBudget": { "type": "number", "minimum": 1000 },
+        "defaultFormat": { "type": "string", "enum": ["claude", "system-prompt", "markdown"] },
+        "defaultDepth": { "type": "string", "enum": ["index", "contract", "full"] }
+      }
+    }
+  },
+  "additionalProperties": false
+}

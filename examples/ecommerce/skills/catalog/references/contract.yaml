@@ -1,0 +1,161 @@
+models:
+  Product:
+    fields:
+      id:
+        type: uuid
+        description: Primary key, UUIDv4, server-generated
+      name:
+        type: string
+        maxLength: 255
+        required: true
+      sku:
+        type: string
+        maxLength: 100
+        required: true
+        description: Unique across all products including archived; uppercase convention
+      slug:
+        type: string
+        maxLength: 300
+        description: Auto-generated from name; unique; used in storefront URLs
+      description:
+        type: string
+        maxLength: 50000
+        nullable: true
+      price:
+        type: integer
+        required: true
+        description: Price in smallest currency unit (e.g. cents); must be >= 0
+      compareAtPrice:
+        type: integer
+        nullable: true
+        description: Original/crossed-out price; must be strictly greater than price if set
+      categoryId:
+        type: uuid
+        nullable: true
+        description: FK → categories.id
+      inventory:
+        type: integer
+        default: 0
+        description: Available stock units; zero does not auto-archive product
+      status:
+        type: enum
+        values: [draft, active, archived]
+        default: draft
+      images:
+        type: array
+        items: string
+        description: Ordered list of image URLs; first item is the primary image
+      attributes:
+        type: object
+        description: Freeform key-value attributes (size, color, material, etc.)
+        nullable: true
+      createdAt:
+        type: datetime
+        description: Set once at insert
+      updatedAt:
+        type: datetime
+        description: Managed by database trigger
+
+  Category:
+    fields:
+      id:
+        type: uuid
+      name:
+        type: string
+        maxLength: 100
+        required: true
+      slug:
+        type: string
+        maxLength: 120
+        description: Used in storefront URLs; changing breaks URLs without redirect
+      parentCategoryId:
+        type: uuid
+        nullable: true
+        description: Supports one level of nesting only; root categories have null
+      displayOrder:
+        type: integer
+        default: 0
+        description: Ascending sort order within same parent level
+      active:
+        type: boolean
+        default: true
+
+routes:
+  - method: GET
+    path: /api/products
+    description: List and search products
+    queryParams:
+      - name: q
+        type: string
+        description: Full-text search query against name and description
+      - name: categoryId
+        type: uuid
+        required: false
+      - name: status
+        type: string
+        description: Defaults to active for public requests
+      - name: minPrice
+        type: integer
+        description: Minimum price in cents (inclusive)
+      - name: maxPrice
+        type: integer
+        description: Maximum price in cents (inclusive)
+      - name: inStockOnly
+        type: boolean
+        default: false
+      - name: after
+        type: uuid
+        description: Cursor for pagination
+      - name: limit
+        type: integer
+        default: 48
+        max: 200
+    response:
+      items:
+        type: array
+        items: Product
+      nextCursor:
+        type: uuid
+        nullable: true
+      total:
+        type: integer
+        description: Total matching count (for pagination UI)
+
+  - method: POST
+    path: /api/products
+    description: Create a new product; status defaults to draft
+    body:
+      name: required
+      sku: required
+      price: required
+      description: optional
+      compareAtPrice: optional
+      categoryId: optional
+      inventory: optional
+      images: optional
+      attributes: optional
+    response: Product
+
+  - method: GET
+    path: /api/products/:idOrSlug
+    description: Fetch product by UUID or slug
+    response: Product
+
+  - method: PUT
+    path: /api/products/:id
+    description: Update product; status transitions validated
+    body:
+      name: optional
+      price: optional
+      compareAtPrice: optional
+      status: optional
+      inventory: optional
+      images: optional
+      attributes: optional
+    response: Product
+
+  - method: DELETE
+    path: /api/products/:id
+    description: Archive product (sets status to archived); never hard-deletes
+    response:
+      archived: boolean

@@ -1,0 +1,33 @@
+---
+name: {{name}}
+description: {{description}}
+{{#if domain}}domainkit-domain: {{domain}}{{/if}}
+{{#if dependencies}}domainkit-dependencies: {{dependencies}}{{/if}}
+{{#if codePaths}}domainkit-code-paths: {{codePaths}}{{/if}}
+domainkit-version: "1"
+domainkit-last-verified: {{lastVerified}}
+---
+
+# {{titleCase name}}
+
+{{description}}
+
+## Data Models
+
+<!-- Describe the key data models/entities in this domain -->
+
+## Business Rules
+
+<!-- Document the important business rules and invariants -->
+
+## API Surface
+
+<!-- List the key API endpoints or interfaces -->
+
+## Gotchas
+
+<!-- Document non-obvious behaviors, edge cases, or common mistakes -->
+
+## Testing Priorities
+
+<!-- What should always be tested when changing this domain? -->
