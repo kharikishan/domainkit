@@ -1,4 +1,10 @@
 export { scanForModules } from './module-scanner.js';
+export type { DiscoveredModule, ScanOptions } from './module-scanner.js';
+export { classifyProject } from './scanner/project-classifier.js';
+export type { ProjectClassification, ProjectType, ProjectLanguage, SpecKitInfo } from './scanner/project-classifier.js';
+export { sourceFileGlob, entryPointFiles } from './scanner/project-classifier.js';
+export { analyzeStructure } from './scanner/structure-analyzer.js';
+export { analyzeImports } from './scanner/import-analyzer.js';
 export { extractTypes } from './type-extractor.js';
 export { extractRoutes } from './route-extractor.js';
 export { generateSkillDraft } from './skill-writer.js';

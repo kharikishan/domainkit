@@ -20,7 +20,11 @@ export function register(program: Command): void {
         const skillsDir = resolve(process.cwd(), config.skillsDir);
 
         const { scanForModules } = await import('../../generate/module-scanner.js');
-        const modules = await scanForModules(sourceRoot, options.modules);
+        const modules = await scanForModules({
+          projectRoot: process.cwd(),
+          sourceRoot,
+          filterModules: options.modules,
+        });
 
         if (modules.length === 0) {
           error('No modules found. Check your sourceRoot configuration.');
@@ -30,7 +34,23 @@ export function register(program: Command): void {
         if (options.scan && !options.bootstrap) {
           info(`Found ${modules.length} module(s):`);
           for (const mod of modules) {
-            info(`  ${mod.name} (confidence: ${(mod.confidence * 100).toFixed(0)}%)`);
+            const pct = (mod.confidence * 100).toFixed(0);
+            const via = mod.detectedBy ?? 'unknown';
+            const hints = mod.indicators?.length
+              ? ` [${mod.indicators.join(', ')}]`
+              : '';
+            info(`  ${mod.name} (confidence: ${pct}%, via: ${via})${hints}`);
+          }
+          const meta: string[] = [];
+          if (modules[0]?.projectType) meta.push(`type: ${modules[0].projectType}`);
+          if (modules[0]?.language) meta.push(`language: ${modules[0].language}`);
+          if (meta.length > 0) info(`\nProject ${meta.join(', ')}`);
+          if (modules[0]?.specKit?.detected) {
+            const sk = modules[0].specKit;
+            const parts = ['spec-kit detected (.specify/)'];
+            if (sk.hasConstitution) parts.push('has constitution');
+            if (sk.features?.length) parts.push(`${sk.features.length} feature spec(s)`);
+            info(`Spec-Kit: ${parts.join(', ')}`);
           }
           return;
         }
