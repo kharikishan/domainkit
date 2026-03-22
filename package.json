@@ -29,6 +29,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "setup": "pnpm install && pnpm run build && pnpm link --global",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
@@ -82,6 +83,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/domainkit/domainkit.git"
+    "url": "https://github.com/kharikishan/domainkit.git"
   }
 }
