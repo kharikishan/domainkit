@@ -1,0 +1,34 @@
+---
+name: {{name}}
+description: {{description}}
+{{#if domain}}domainkit-domain: {{domain}}{{/if}}
+{{#if dependencies}}domainkit-dependencies: {{dependencies}}{{/if}}
+{{#if codePaths}}domainkit-code-paths: {{codePaths}}{{/if}}
+domainkit-version: "1"
+domainkit-last-verified: {{lastVerified}}
+domainkit-persona: domain-expert
+---
+
+# {{titleCase name}}
+
+{{description}}
+
+## Business Rules
+
+<!-- Document the core business rules and logic that this domain enforces. Include validation rules, state transitions, and calculation formulas. -->
+
+## Invariants
+
+<!-- List the invariants that must always hold true: data consistency rules, referential integrity constraints, and business constraints that must never be violated. -->
+
+## Domain Events
+
+<!-- Document the domain events emitted and consumed: what triggers them, what data they carry, and what downstream effects they have. -->
+
+## Edge Cases & Gotchas
+
+<!-- Document non-obvious edge cases, race conditions, and gotchas that developers commonly trip over. -->
+
+## Bounded Context
+
+<!-- Define the boundaries of this domain: what it owns, what it delegates, and how it communicates with adjacent domains. -->

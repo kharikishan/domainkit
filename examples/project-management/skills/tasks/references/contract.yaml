@@ -1,0 +1,140 @@
+models:
+  Task:
+    fields:
+      id:
+        type: uuid
+        description: Primary key, generated server-side (UUIDv4)
+      title:
+        type: string
+        maxLength: 255
+        required: true
+      description:
+        type: string
+        maxLength: 10000
+        nullable: true
+      status:
+        type: enum
+        values: [draft, active, blocked, completed, cancelled, archived]
+        default: draft
+      assigneeId:
+        type: uuid
+        nullable: true
+        description: FK → users.id; must be a project member with role member/admin/owner
+      projectId:
+        type: uuid
+        required: true
+        description: FK → projects.id
+      parentTaskId:
+        type: uuid
+        nullable: true
+        description: FK → tasks.id; enables subtask nesting (max 1 level deep)
+      dueDate:
+        type: datetime
+        nullable: true
+        description: ISO 8601 UTC; triggers priority escalation when within 24h
+      priority:
+        type: enum
+        values: [low, medium, high, urgent]
+        default: medium
+      cancelledAt:
+        type: datetime
+        nullable: true
+        description: Set when status transitions to cancelled; never unset
+      createdAt:
+        type: datetime
+        description: Set once at insert; never modified
+      updatedAt:
+        type: datetime
+        description: Managed by database trigger; do not set in application code
+
+routes:
+  - method: GET
+    path: /api/tasks
+    description: List tasks with filtering and cursor pagination
+    queryParams:
+      - name: projectId
+        type: uuid
+        required: false
+      - name: status
+        type: string
+        required: false
+      - name: assigneeId
+        type: uuid
+        required: false
+      - name: priority
+        type: string
+        required: false
+      - name: after
+        type: uuid
+        description: Cursor — last task id from previous page
+        required: false
+      - name: limit
+        type: integer
+        default: 50
+        max: 200
+    response:
+      items:
+        type: array
+        items: Task
+      nextCursor:
+        type: uuid
+        nullable: true
+
+  - method: POST
+    path: /api/tasks
+    description: Create a new task
+    body:
+      title: required
+      projectId: required
+      description: optional
+      assigneeId: optional
+      dueDate: optional
+      priority: optional
+      parentTaskId: optional
+    response: Task
+
+  - method: GET
+    path: /api/tasks/:id
+    description: Fetch a single task by ID
+    response: Task
+
+  - method: PUT
+    path: /api/tasks/:id
+    description: Update task fields; status transitions validated against state machine
+    body:
+      title: optional
+      description: optional
+      status: optional
+      assigneeId: optional
+      dueDate: optional
+      priority: optional
+    response: Task
+
+  - method: DELETE
+    path: /api/tasks/:id
+    description: Permanently delete a task (admin/owner only); prefer cancel for audit trail
+    response:
+      deleted: boolean
+
+  - method: POST
+    path: /api/tasks/bulk
+    description: Bulk assign, transition, or archive tasks
+    body:
+      action:
+        type: enum
+        values: [assign, transition, archive]
+      ids:
+        type: array
+        items: uuid
+      payload:
+        type: object
+        description: Action-specific data (e.g. assigneeId for assign, status for transition)
+    response:
+      results:
+        type: array
+        items:
+          id: uuid
+          success: boolean
+          error:
+            type: string
+            nullable: true

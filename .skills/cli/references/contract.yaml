@@ -1,0 +1,22 @@
+# Contract for cli
+# This file defines the formal interface of the cli domain
+
+models:
+  - name: Cli
+    fields:
+      - name: id
+        type: string
+        required: true
+      # Add more fields...
+
+# api:
+#   routes:
+#     - method: GET
+#       path: /api/cli
+#       description: List all cli items
+
+# events:
+#   - name: cli.created
+#     description: Fired when a new cli is created
+
+dependencies: []

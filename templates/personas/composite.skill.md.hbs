@@ -1,0 +1,21 @@
+---
+name: {{name}}
+description: {{description}}
+{{#if domain}}domainkit-domain: {{domain}}{{/if}}
+{{#if dependencies}}domainkit-dependencies: {{dependencies}}{{/if}}
+{{#if codePaths}}domainkit-code-paths: {{codePaths}}{{/if}}
+domainkit-version: "1"
+domainkit-last-verified: {{lastVerified}}
+domainkit-persona: {{personaId}}
+---
+
+# {{titleCase name}}
+
+{{description}}
+
+{{#each sections}}
+{{heading}}
+
+<!-- {{prompt}} -->
+
+{{/each}}

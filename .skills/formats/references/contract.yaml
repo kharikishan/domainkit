@@ -1,0 +1,22 @@
+# Contract for formats
+# This file defines the formal interface of the formats domain
+
+models:
+  - name: Formats
+    fields:
+      - name: id
+        type: string
+        required: true
+      # Add more fields...
+
+# api:
+#   routes:
+#     - method: GET
+#       path: /api/formats
+#       description: List all formats items
+
+# events:
+#   - name: formats.created
+#     description: Fired when a new formats is created
+
+dependencies: []

@@ -1,0 +1,22 @@
+# Contract for core
+# This file defines the formal interface of the core domain
+
+models:
+  - name: Core
+    fields:
+      - name: id
+        type: string
+        required: true
+      # Add more fields...
+
+# api:
+#   routes:
+#     - method: GET
+#       path: /api/core
+#       description: List all core items
+
+# events:
+#   - name: core.created
+#     description: Fired when a new core is created
+
+dependencies: []
