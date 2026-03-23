@@ -8,16 +8,19 @@ import { ensureDir, dirExists } from '../../utils/fs.js';
 
 const AGENT_DIR_MAP: Record<string, string> = {
   claude: '.claude/skills',
+  cursor: '.cursor/skills',
   codex: '.agents/skills',
   vscode: '.github/skills',
-  cursor: '.cursor/skills',
+  github: '.github/skills',
+  windsurf: '.agents/skills',
+  generic: '.skills',
 };
 
 export function register(program: Command): void {
   program
     .command('sync')
-    .description('Sync skills to agent platform directories')
-    .option('-t, --target <targets...>', 'Target platforms (claude, codex, vscode, cursor)')
+    .description('Sync skills to agent platform directories (Agent Skills standard)')
+    .option('-t, --target <targets...>', 'Target platforms (claude, cursor, codex, vscode, github, windsurf)')
     .option('-a, --all', 'Sync to all known platforms')
     .option('--dry-run', 'Show what would be synced without writing')
     .option('--clean', 'Remove target directories before syncing')

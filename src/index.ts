@@ -9,3 +9,8 @@ export { buildDependencyGraph, resolveDependencies, detectCycles } from './core/
 export { matchTaskToDomains } from './core/matcher.js';
 export { assembleContext } from './core/assembler.js';
 export { renderContext } from './formats/index.js';
+export { saveManifest, loadManifest } from './core/manifest.js';
+export { computeSkillHash, trackVersion, getVersionHistory } from './core/versioning.js';
+export { recommendFromDiff } from './recommend/index.js';
+export type { PersonaDefinition, PersonaSection } from './personas/types.js';
+export { listPersonas, getPersona, mergePersonas, loadBuiltinPersonas } from './personas/registry.js';

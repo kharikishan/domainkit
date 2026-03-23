@@ -90,8 +90,12 @@ DomainKit is a **management layer** on top of Agent Skills. It doesn't change th
 - **Assembling** only the relevant skills for a given task
 - **Validating** skill metadata and contracts
 - **Detecting drift** between skills and code
-- **Generating** skills from existing code
+- **Generating** skills from existing code with persona-based perspectives
+- **Recommending** relevant skills based on git diff analysis
+- **Syncing** skills to 26+ platforms via the Agent Skills standard
 - **Serving** skills via MCP to agents in real-time
+- **Watching** source files for changes that affect skills
+- **Importing** skills from OpenAPI/Swagger specifications
 
 ### The SKILL.md Format
 
@@ -232,6 +236,18 @@ your-project/
 dk add user-auth --domain auth --description "User authentication and session management"
 ```
 
+You can also use a **persona** to generate different skill templates:
+
+```bash
+# Developer-focused (architecture, patterns, dependencies)
+dk add user-auth --domain auth --description "User authentication" --persona developer
+
+# Domain-expert-focused (business rules, invariants, events)
+dk add user-auth --domain auth --description "User authentication" --persona domain-expert
+```
+
+See available personas with `dk persona list`.
+
 This scaffolds:
 ```
 skills/
@@ -360,6 +376,15 @@ context:
   defaultFormat: claude   # Output format (claude, system-prompt, markdown)
   defaultDepth: contract  # Default depth (index, contract, full)
 ```
+
+## New in v0.2
+
+- **Persona-based generation** — `dk add --persona developer` or `--persona domain-expert` generates different SKILL.md templates. Custom personas via `.domainkit/personas/*.yaml`.
+- **Smart recommendations** — `dk recommend` analyzes git diffs to suggest which skills need attention.
+- **Universal sync** — `dk sync` copies skills to 26+ platforms via the Agent Skills standard — one format, every platform.
+- **Watch mode** — `dk watch` monitors source files and alerts when changes affect skills.
+- **OpenAPI import** — `dk import openapi ./spec.yaml` generates skills from API specifications.
+- **Full drift detection** — All four strategies (staleness, file-coverage, api-routes, model-diff) are now fully integrated.
 
 ## What's Next?
 

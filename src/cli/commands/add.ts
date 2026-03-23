@@ -29,6 +29,8 @@ export function register(program: Command): void {
     .option('--deps <list>', 'Comma-separated dependency skill names')
     .option('--code-paths <list>', 'Comma-separated code paths')
     .option('--contract', 'Also scaffold a contract.yaml for this skill')
+    .option('--persona <id>', 'Generate skill using a specific persona (e.g. developer, domain-expert)')
+    .option('--personas <ids...>', 'Generate skill by merging multiple personas')
     .action(async (name: string, opts) => {
       try {
         const projectRoot = await resolveProjectRoot();
@@ -60,18 +62,45 @@ export function register(program: Command): void {
 
         const skillDir = join(projectRoot, config.skillsDir, name);
 
+        // Resolve persona for template selection
+        const personaIds: string[] = opts.personas ?? (opts.persona ? [opts.persona] : []);
+        let templateName = 'skill.md.hbs';
+        let templateData: Record<string, unknown> = {
+          name,
+          description,
+          domain: domain || undefined,
+          dependencies: deps.length > 0 ? toYamlList(deps) : undefined,
+          codePaths: codePaths.length > 0 ? toYamlList(codePaths) : undefined,
+          lastVerified,
+        };
+
+        if (personaIds.length > 0) {
+          const { getPersona, mergePersonas } = await import('../../personas/index.js');
+          const resolved = [];
+          for (const pid of personaIds) {
+            const p = await getPersona(pid, projectRoot);
+            if (!p) {
+              logger.error(`Persona "${pid}" not found. Run "dk persona list" to see available personas.`);
+              process.exit(1);
+            }
+            resolved.push(p);
+          }
+
+          const persona = resolved.length === 1 ? resolved[0] : mergePersonas(resolved);
+
+          // Use persona-specific template if available, otherwise composite
+          if (resolved.length === 1) {
+            templateName = `personas/${persona.id}.skill.md.hbs`;
+          } else {
+            templateName = 'personas/composite.skill.md.hbs';
+            templateData = { ...templateData, personaId: persona.id, sections: persona.sections };
+          }
+        }
+
         await withSpinner(`Creating skill "${name}"…`, async () => {
           await ensureDir(skillDir);
 
-          const skillContent = await renderTemplate('skill.md.hbs', {
-            name,
-            description,
-            domain: domain || undefined,
-            dependencies: deps.length > 0 ? toYamlList(deps) : undefined,
-            codePaths: codePaths.length > 0 ? toYamlList(codePaths) : undefined,
-            lastVerified,
-          });
-
+          const skillContent = await renderTemplate(templateName, templateData);
           await writeFileContent(join(skillDir, 'SKILL.md'), skillContent);
         });
 
@@ -92,6 +121,13 @@ export function register(program: Command): void {
         if (opts.contract) {
           logger.info(`  Contract : ${join(config.skillsDir, name, 'references', 'contract.yaml')}`);
         }
+
+        // Persist updated manifest
+        const { readAllSkills } = await import('../../core/skill-reader.js');
+        const { buildManifest, saveManifest } = await import('../../core/manifest.js');
+        const allSkills = await readAllSkills(join(projectRoot, config.skillsDir));
+        const manifest = buildManifest(allSkills);
+        await saveManifest(manifest, join(projectRoot, '.domainkit'));
       } catch (err) {
         logger.error(`Add failed: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(1);

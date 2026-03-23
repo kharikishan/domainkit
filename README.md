@@ -24,18 +24,24 @@ DomainKit packages each product domain as its own Agent Skill and provides tooli
 | **Code Generation** | Auto-scaffold skills from existing TypeScript codebases |
 | **Dependency Resolution** | Resolve transitive dependencies between domains |
 | **Token Budgeting** | Stay within token limits with three-tier progressive disclosure |
-| **Multi-Platform Sync** | Sync skills to Claude, Cursor, VS Code, Codex, and GitHub |
+| **Universal Sync** | Sync skills to 26+ platforms via the Agent Skills standard — one format, every platform |
 | **MCP Server** | Serve domain context to agents in real-time |
+| **Persona-Based Generation** | Generate skills from developer or domain-expert perspectives |
+| **Smart Recommendations** | Recommend relevant skills based on git diff analysis |
+
 
 ```
 +--------------------------------------------------+
-|            DomainKit (management layer)           |
+|         DomainKit (management layer · 14 commands)        |
 |                                                   |
 |   Manifest    Context     Drift      Code         |
 |   Generation  Assembly    Detection  Generation   |
 |                                                   |
-|   Multi-Agent   MCP       Dependency  Token       |
-|   Sync          Server    Resolution  Budgets     |
+|   Persona     Recommend   Multi-Agent   MCP       |
+|   Engine      Engine      Sync          Server    |
+|                                                   |
+|   Watch       Import      Dependency  Token       |
+|   Mode        Pipeline    Resolution  Budgets     |
 +---------------------------------------------------+
 |          Agent Skills Standard (foundation)        |
 |                                                    |
@@ -133,7 +139,7 @@ pnpm unlink --global domainkit
 dk init --platform claude --source-root src
 
 # 2. Add domain skills
-dk add payments --domain payments --description "Stripe payment processing"
+dk add payments --domain payments --description "Stripe payment processing" --persona developer
 dk add orders --domain orders --deps payments --description "Order lifecycle management"
 
 # 3. Fill in the generated SKILL.md files with your domain knowledge
@@ -153,14 +159,17 @@ dk init --platform claude --source-root src
 
 # 2. Scan your codebase and auto-generate skill drafts
 dk generate --scan
-dk generate --bootstrap --with-contracts
+dk generate --bootstrap --with-contracts --persona domain-expert
 
-# 3. Review and enrich generated skills with business rules and gotchas
+# 3. See which skills are affected by recent changes
+dk recommend
 
-# 4. Check drift baseline
+# 4. Review and enrich generated skills with business rules and gotchas
+
+# 5. Check drift baseline
 dk drift
 
-# 5. Sync to your agent platform
+# 6. Sync to your agent platform
 dk sync --all
 ```
 
@@ -239,8 +248,8 @@ DomainKit detects when skills diverge from code through four strategies:
 |----------|---------------|
 | **Staleness** | Is `domainkit-last-verified` older than the threshold? |
 | **File Coverage** | Do `domainkit-code-paths` globs still match files? |
-| **Route Extraction** | Have API routes changed since last verified? |
-| **Model Diff** | Do TypeScript types match contract models? |
+| **Route Extraction** | Have API routes changed since last verified? (fully integrated) |
+| **Model Diff** | Do TypeScript types match contract models? (fully integrated) |
 
 Each skill gets a drift score (0-100): **fresh** (>=80), **stale** (50-80), **drifted** (<50).
 
@@ -273,15 +282,18 @@ DomainKit can be used as a library:
 ```typescript
 import {
   loadConfig,
-  readSkills,
+  readAllSkills,
   buildManifest,
   assembleContext,
-  runDriftCheck
+  // New in v0.2
+  listPersonas,
+  getPersona,
+  recommendFromDiff,
 } from 'domainkit';
 
 // Load config and skills
 const config = await loadConfig('.domainkit/config.yaml');
-const skills = await readSkills(config.skillsDir);
+const skills = await readAllSkills(config.skillsDir);
 const manifest = buildManifest(skills);
 
 // Assemble context for a task
@@ -292,12 +304,9 @@ const context = await assembleContext({
   budget: 4000,
 });
 
-// Check for drift
-const driftResults = await runDriftCheck({
-  skills,
-  sourceRoot: config.sourceRoot,
-  strategies: ['staleness', 'file-coverage'],
-});
+// Recommend skills affected by recent changes
+const recommendations = await recommendFromDiff({ skills, cwd: '.' });
+
 ```
 
 ## Requirements

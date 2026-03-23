@@ -1,7 +1,36 @@
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import * as AjvModule from 'ajv';
 import type { DomainKitConfig } from './types.js';
 import { fileExists, dirExists, readFileContent, writeFileContent, resolveProjectRoot } from '../utils/fs.js';
 import { parseYaml, stringifyYaml } from '../utils/yaml.js';
+
+const require = createRequire(import.meta.url);
+const configSchema = require('../schemas/config.schema.json') as Record<string, unknown>;
+
+// Ajv v8 may export its constructor as the default or as .default depending on the bundler
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AjvConstructor: new (...args: unknown[]) => AjvModule.default = (
+  (AjvModule as unknown as { default: typeof AjvModule.default }).default ?? AjvModule
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+) as any;
+
+const ajv = new AjvConstructor({ allErrors: true });
+const validateConfigSchema = ajv.compile(configSchema);
+
+export function validateConfig(config: unknown): DomainKitConfig {
+  const isValid = validateConfigSchema(config);
+  if (!isValid && validateConfigSchema.errors) {
+    const details = validateConfigSchema.errors
+      .map((e) => {
+        const field = e.instancePath || '/';
+        return `  - ${field}: ${e.message ?? 'validation failed'}`;
+      })
+      .join('\n');
+    throw new Error(`Invalid DomainKit config:\n${details}`);
+  }
+  return config as DomainKitConfig;
+}
 
 export const CONFIG_FILE = '.domainkit/config.yaml';
 
@@ -9,7 +38,8 @@ export async function loadConfig(projectRoot?: string): Promise<DomainKitConfig>
   const root = await resolveRoot(projectRoot);
   const configPath = join(root, CONFIG_FILE);
   const content = await readFileContent(configPath);
-  return parseYaml<DomainKitConfig>(content);
+  const parsed = parseYaml<unknown>(content);
+  return validateConfig(parsed);
 }
 
 export async function saveConfig(config: DomainKitConfig, projectRoot?: string): Promise<void> {

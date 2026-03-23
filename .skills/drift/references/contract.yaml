@@ -1,0 +1,22 @@
+# Contract for drift
+# This file defines the formal interface of the drift domain
+
+models:
+  - name: Drift
+    fields:
+      - name: id
+        type: string
+        required: true
+      # Add more fields...
+
+# api:
+#   routes:
+#     - method: GET
+#       path: /api/drift
+#       description: List all drift items
+
+# events:
+#   - name: drift.created
+#     description: Fired when a new drift is created
+
+dependencies: []

@@ -1,6 +1,6 @@
 {
   "name": "domainkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI and MCP server for managing domain-focused Agent Skills",
   "type": "module",
   "packageManager": "pnpm@9.15.4",
@@ -27,7 +27,7 @@
     "schemas"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && mkdir -p schemas && cp src/schemas/*.json schemas/",
     "dev": "tsup --watch",
     "setup": "pnpm install && pnpm run build && pnpm link --global",
     "test": "vitest run",

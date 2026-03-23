@@ -91,6 +91,8 @@ dk add <name> [options]
 | `--deps <list>` | Comma-separated dependency names | None |
 | `--code-paths <globs>` | Comma-separated glob patterns for source files | None |
 | `--contract` | Also generate `references/contract.yaml` | `false` |
+| `--persona <id>` | Generate using a persona (e.g. `developer`, `domain-expert`) | None |
+| `--personas <ids...>` | Merge multiple personas | None |
 
 ### What It Creates
 
@@ -118,6 +120,15 @@ dk add payments \
 # Multiple dependencies
 dk add checkout \
   --deps "cart,catalog,payments,inventory"
+
+# With developer persona
+dk add payments --domain payments --description "Payment processing" --persona developer
+
+# With domain-expert persona
+dk add payments --domain payments --description "Payment processing" --persona domain-expert
+
+# Merge multiple personas
+dk add payments --personas developer domain-expert
 ```
 
 ---
@@ -356,7 +367,7 @@ dk drift --report json --threshold 30
 
 ## dk sync
 
-Copy skills to agent platform directories.
+Sync skills to agent platform directories (Agent Skills standard).
 
 ### Usage
 
@@ -378,24 +389,19 @@ dk sync [options]
 | Platform | Directory |
 |----------|-----------|
 | claude | `.claude/skills/` |
-| codex | `.agents/skills/` |
-| vscode | `.vscode/skills/` |
 | cursor | `.cursor/skills/` |
+| codex | `.agents/skills/` |
+| vscode | `.github/skills/` |
 | github | `.github/skills/` |
+| windsurf | `.agents/skills/` |
+| generic | `.skills/` |
 
 ### Examples
 
 ```bash
-# Sync to Claude
-dk sync --target claude
-
-# Sync to all configured platforms
 dk sync --all
-
-# Preview first
+dk sync --target claude cursor
 dk sync --all --dry-run
-
-# Clean sync (remove old, copy new)
 dk sync --target claude --clean
 ```
 
@@ -420,6 +426,8 @@ dk generate [options]
 | `-m, --modules <list>` | Comma-separated module names to generate | All discovered |
 | `--with-contracts` | Also generate `contract.yaml` files | `false` |
 | `--dry-run` | Preview without writing files | `false` |
+| `--persona <id>` | Generate skills using a specific persona | None |
+| `--personas <ids...>` | Generate skills by merging multiple personas | None |
 
 ### Requirements
 
@@ -448,6 +456,12 @@ dk generate --bootstrap --with-contracts
 
 # Generate specific modules only
 dk generate --bootstrap --modules auth,billing --with-contracts
+
+# Generate with developer persona
+dk generate --bootstrap --with-contracts --persona developer
+
+# Generate with domain-expert persona
+dk generate --bootstrap --persona domain-expert
 ```
 
 ---
@@ -523,4 +537,176 @@ Add to your Cursor MCP settings:
     }
   }
 }
+```
+
+---
+
+## dk persona
+
+Manage persona definitions for skill generation.
+
+### Subcommands
+
+#### dk persona list
+
+List all available personas (built-in and custom).
+
+```bash
+dk persona list
+```
+
+#### dk persona show
+
+Display details of a specific persona.
+
+```bash
+dk persona show <id>
+```
+
+#### dk persona create
+
+Scaffold a custom persona YAML file.
+
+```bash
+dk persona create <id> [options]
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--name <name>` | Display name | Derived from id |
+| `--description <text>` | Persona description | Generic |
+
+### Built-in Personas
+
+| Persona | Focus Areas | Sections |
+|---------|------------|----------|
+| `developer` | Architecture, code patterns, dependencies, API usage, setup | Architecture Overview, Code Patterns, Key Dependencies, API Usage, Setup & Development |
+| `domain-expert` | Business rules, invariants, domain events, edge cases, DDD | Business Rules, Invariants, Domain Events, Edge Cases & Gotchas, Bounded Context |
+
+### Custom Personas
+
+Create custom personas at `.domainkit/personas/<id>.yaml`:
+
+```yaml
+id: security-engineer
+name: "Security Engineer"
+description: "Focuses on auth flows and OWASP concerns"
+focusAreas: ["auth flows", "input validation", "OWASP"]
+sections:
+  - heading: "## Security Concerns"
+    prompt: "Document security considerations"
+    required: true
+promptContext: "Focus on security aspects of this module."
+priority: supplementary
+```
+
+### Examples
+
+```bash
+# List personas
+dk persona list
+
+# Show developer persona details
+dk persona show developer
+
+# Create a custom persona
+dk persona create security-engineer --name "Security Engineer"
+```
+
+---
+
+## dk recommend
+
+Recommend relevant skills based on git changes.
+
+### Usage
+
+```bash
+dk recommend [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--staged` | Analyze staged changes only | `false` |
+| `--commit <sha>` | Analyze a specific commit | None |
+| `--json` | Output as JSON | `false` |
+
+### How It Works
+
+1. Runs `git diff` to get changed files
+2. Matches each changed file against skills' `domainkit-code-paths` globs
+3. Scores each skill by the ratio of matched files
+4. Returns ranked recommendations
+
+### Examples
+
+```bash
+# Recommend based on uncommitted changes
+dk recommend
+
+# Recommend based on staged changes
+dk recommend --staged
+
+# Recommend for a specific commit
+dk recommend --commit abc123
+
+# JSON output for scripting
+dk recommend --json
+```
+
+---
+
+## dk watch
+
+Watch source files and detect skill drift in real-time.
+
+### Usage
+
+```bash
+dk watch
+```
+
+Monitors the source root for file changes and reports which skills are affected. Uses `domainkit-code-paths` to match changed files against skills.
+
+### Examples
+
+```bash
+dk watch
+# Output:
+# Watching src/ for changes...
+# Tracking 6 skill(s)
+#
+# File changed: src/payments/checkout.ts
+#   Affected skill(s): payments
+#   Run: dk drift --skill payments
+```
+
+---
+
+## dk import
+
+Import skills from API specifications.
+
+### Subcommands
+
+#### dk import openapi
+
+Generate skills from an OpenAPI/Swagger specification.
+
+```bash
+dk import openapi <spec-file>
+```
+
+Extracts models from `components/schemas` and routes from `paths`, groups by first path segment, and generates skills with contracts.
+
+### Examples
+
+```bash
+# Import from OpenAPI spec
+dk import openapi ./api/openapi.yaml
+
+# Import from Swagger
+dk import openapi ./swagger.json
 ```

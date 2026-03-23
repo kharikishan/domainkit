@@ -1,0 +1,22 @@
+# Contract for mcp
+# This file defines the formal interface of the mcp domain
+
+models:
+  - name: Mcp
+    fields:
+      - name: id
+        type: string
+        required: true
+      # Add more fields...
+
+# api:
+#   routes:
+#     - method: GET
+#       path: /api/mcp
+#       description: List all mcp items
+
+# events:
+#   - name: mcp.created
+#     description: Fired when a new mcp is created
+
+dependencies: []

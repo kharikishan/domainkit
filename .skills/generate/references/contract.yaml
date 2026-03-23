@@ -1,0 +1,22 @@
+# Contract for generate
+# This file defines the formal interface of the generate domain
+
+models:
+  - name: Generate
+    fields:
+      - name: id
+        type: string
+        required: true
+      # Add more fields...
+
+# api:
+#   routes:
+#     - method: GET
+#       path: /api/generate
+#       description: List all generate items
+
+# events:
+#   - name: generate.created
+#     description: Fired when a new generate is created
+
+dependencies: []

@@ -76,12 +76,14 @@ dk add orders --domain orders \
   --description "Order lifecycle, fulfillment, and returns" \
   --code-paths "src/modules/orders/**" \
   --deps payments \
+  --persona domain-expert \
   --contract
 
 dk add payments --domain payments \
   --description "Stripe payment processing and refunds" \
   --code-paths "src/modules/payments/**" \
   --deps orders \
+  --persona developer \
   --contract
 
 dk add inventory --domain inventory \
@@ -89,6 +91,18 @@ dk add inventory --domain inventory \
   --code-paths "src/modules/inventory/**" \
   --deps catalog \
   --contract
+```
+
+### Choose a Persona
+
+DomainKit includes built-in personas that generate different SKILL.md sections based on perspective:
+
+- **developer** — Architecture, code patterns, dependencies, API usage, setup
+- **domain-expert** — Business rules, invariants, domain events, edge cases
+
+```bash
+# See available personas
+dk persona list
 ```
 
 ### Fill In Each Skill

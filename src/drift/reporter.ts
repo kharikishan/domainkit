@@ -2,6 +2,10 @@ import chalk from 'chalk';
 import type { Skill, DriftResult, DriftIssue } from '../core/types.js';
 import { checkStaleness } from './staleness.js';
 import { checkFileCoverage } from './file-coverage.js';
+import { extractExpressRoutes, extractNextjsRoutes, extractSkillRoutes, extractContractRoutes, diffRoutes } from './api-routes.js';
+import { diffModels, modelDiffToIssues } from './model-diff.js';
+import { readContract } from '../core/skill-reader.js';
+import fg from 'fast-glob';
 
 // ---------------------------------------------------------------------------
 // Public option types
@@ -18,8 +22,8 @@ export interface DriftCheckOptions {
    */
   threshold?: number;
   /**
-   * Which drift strategies to run.  Supported values: 'staleness', 'file-coverage'.
-   * Defaults to both.
+   * Which drift strategies to run.  Supported values: 'staleness', 'file-coverage', 'api-routes', 'model-diff'.
+   * Defaults to both staleness and file-coverage.
    */
   strategies?: string[];
 }
@@ -94,15 +98,75 @@ export async function runDriftCheck(options: DriftCheckOptions): Promise<DriftRe
       }
     }
 
-    // --- api-routes (optional, not in the default set but callable by name) ---
-    // The heavy lifting (ts-morph AST walking + filesystem scan) lives in
-    // api-routes.ts; callers that want this strategy should wire it up
-    // themselves using extractExpressRoutes / extractNextjsRoutes / diffRoutes.
+    // --- api-routes ---
     if (strategySet.has('api-routes')) {
-      console.warn(
-        '[domainkit/drift] The "api-routes" strategy must be orchestrated by the caller ' +
-          'using extractExpressRoutes / extractNextjsRoutes / diffRoutes from api-routes.ts.',
-      );
+      try {
+        // Gather documented routes from skill metadata and contract
+        const documentedRoutes: string[] = [...extractSkillRoutes(skill)];
+        const contract = await readContract(skill.dir);
+        if (contract) {
+          documentedRoutes.push(...extractContractRoutes(contract));
+        }
+
+        // Gather actual routes from code
+        const codePaths = skill.metadata['domainkit-code-paths'] ?? [];
+        const actualRoutes: string[] = [];
+
+        for (const pattern of codePaths) {
+          const files = await fg(pattern, { onlyFiles: true, absolute: true, cwd: sourceRoot });
+          for (const file of files) {
+            const routes = await extractExpressRoutes(file);
+            actualRoutes.push(...routes);
+          }
+        }
+
+        // Check for Next.js app directory
+        const appDir = await fg('app', { onlyDirectories: true, absolute: true, cwd: sourceRoot });
+        if (appDir.length > 0) {
+          const nextRoutes = await extractNextjsRoutes(appDir[0]);
+          actualRoutes.push(...nextRoutes);
+        }
+
+        // Only diff if we have documented routes to compare against
+        if (documentedRoutes.length > 0 || actualRoutes.length > 0) {
+          const routeIssues = diffRoutes(actualRoutes, documentedRoutes);
+          issues.push(...routeIssues);
+        }
+      } catch (err: unknown) {
+        console.warn(
+          `[domainkit/drift] api-routes strategy failed for "${skill.metadata.name}": ${String(err)}`,
+        );
+      }
+    }
+
+    // --- model-diff ---
+    if (strategySet.has('model-diff')) {
+      try {
+        const contract = await readContract(skill.dir);
+        if (contract && contract.models && contract.models.length > 0) {
+          const codePaths = skill.metadata['domainkit-code-paths'] ?? [];
+          const sourceFiles: string[] = [];
+
+          for (const pattern of codePaths) {
+            const files = await fg(pattern, {
+              onlyFiles: true,
+              absolute: true,
+              cwd: sourceRoot,
+            });
+            sourceFiles.push(...files.filter(f => f.endsWith('.ts') || f.endsWith('.tsx')));
+          }
+
+          if (sourceFiles.length > 0) {
+            const diffs = await diffModels(contract, sourceFiles);
+            const modelIssues = modelDiffToIssues(diffs);
+            issues.push(...modelIssues);
+          }
+        }
+      } catch (err: unknown) {
+        console.warn(
+          `[domainkit/drift] model-diff strategy failed for "${skill.metadata.name}": ${String(err)}`,
+        );
+      }
     }
 
     const score = computeScore(issues);

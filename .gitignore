@@ -1,5 +1,6 @@
 node_modules/
 dist/
+schemas/
 *.tsbuildinfo
 .domainkit/.drift-cache/
 coverage/

@@ -2,6 +2,26 @@
 
 This guide covers how to write effective domain skills that help AI agents produce correct, consistent code.
 
+## Quick Start with Personas
+
+Instead of starting from a blank template, use a **persona** to generate skills with sections tailored to a specific perspective:
+
+```bash
+# Developer perspective (architecture, patterns, dependencies, API usage)
+dk add payments --persona developer --domain payments --description "Payment processing"
+
+# Domain-expert perspective (business rules, invariants, domain events, edge cases)
+dk add payments --persona domain-expert --domain payments --description "Payment processing"
+
+# See all available personas
+dk persona list
+
+# Create a custom persona for your team
+dk persona create security-engineer
+```
+
+Personas generate different SKILL.md sections but follow the same frontmatter format. You can always edit the generated file to add or remove sections.
+
 ## Anatomy of a Skill
 
 Every skill is a folder containing at minimum a `SKILL.md` file:

@@ -1,6 +1,6 @@
 # DomainKit CLI Commands
 
-DomainKit CLI (`dk` / `domainkit`) provides 9 commands for managing domain-focused Agent Skills.
+DomainKit CLI (`dk` / `domainkit`) provides 14 commands for managing domain-focused Agent Skills.
 
 ---
 
@@ -43,6 +43,8 @@ dk add <name> [options]
 | `--deps <list>` | string | — | Comma-separated dependency skill names |
 | `--code-paths <list>` | string | — | Comma-separated code paths |
 | `--contract` | boolean | `false` | Also scaffold a `contract.yaml` |
+| `--persona <id>` | string | — | Generate with a specific persona perspective |
+| `--personas` | boolean | `false` | Generate separate sections for all personas |
 
 Creates a skill directory with `SKILL.md` (frontmatter + body). Sets `domainkit-last-verified` to today's date.
 
@@ -146,15 +148,19 @@ dk sync [options]
 
 | Platform | Target Directory |
 |----------|-----------------|
-| `claude` | `.claude/skills` |
-| `codex` | `.agents/skills` |
-| `vscode` | `.github/skills` |
-| `cursor` | `.cursor/skills` |
+| `claude` | `.claude/skills/` |
+| `cursor` | `.cursor/skills/` |
+| `codex` | `.agents/skills/` |
+| `vscode` | `.github/skills/` |
+| `github` | `.github/skills/` |
+| `windsurf` | `.agents/skills/` |
+| `generic` | `.skills/` |
 
 ```bash
 dk sync --all
-dk sync --target claude cursor --clean
-dk sync --dry-run
+dk sync --target claude cursor
+dk sync --all --dry-run
+dk sync --target claude --clean
 ```
 
 ---
@@ -199,6 +205,8 @@ dk generate [options]
 | `--auto` | boolean | `false` | Skip confirmation prompts |
 | `--with-contracts` | boolean | `false` | Also generate `contract.yaml` files |
 | `--dry-run` | boolean | `false` | Preview without writing |
+| `--persona <id>` | string | — | Generate with a specific persona perspective |
+| `--personas` | boolean | `false` | Generate separate sections for all personas |
 
 **Smart Scanner:** Automatically detects project type, language, and discovers module boundaries using heuristics.
 
@@ -238,4 +246,87 @@ Exposes skills as MCP tools for integration with Claude Desktop, Cursor, or othe
 ```bash
 dk serve                              # stdio transport (default)
 dk serve --transport sse --port 3001  # SSE transport
+```
+
+---
+
+## dk persona
+
+Manage persona definitions for skill generation.
+
+```bash
+dk persona <subcommand>
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all available personas (built-in + custom) |
+| `show <id>` | Display persona details |
+| `create <id>` | Scaffold a custom persona YAML |
+
+**Built-in personas:** `developer` (architecture, patterns, dependencies), `domain-expert` (business rules, invariants, events). Custom personas live in `.domainkit/personas/*.yaml`.
+
+```bash
+dk persona list
+dk persona show developer
+dk persona create security-engineer
+```
+
+---
+
+## dk recommend
+
+Recommend relevant skills based on git changes.
+
+```bash
+dk recommend [options]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--staged` | boolean | `false` | Analyze staged changes only |
+| `--commit <sha>` | string | — | Analyze a specific commit |
+| `--json` | boolean | `false` | Output as JSON |
+
+Matches changed files against skill `domainkit-code-paths` globs and ranks skills by relevance.
+
+```bash
+dk recommend
+dk recommend --staged
+dk recommend --commit abc123 --json
+```
+
+---
+
+## dk watch
+
+Watch source files and detect skill drift in real-time.
+
+```bash
+dk watch
+```
+
+Monitors the source root for file changes and reports which skills are affected based on `domainkit-code-paths` matching.
+
+```bash
+dk watch
+# File changed: src/payments/checkout.ts
+#   Affected skill(s): payments
+#   Run: dk drift --skill payments
+```
+
+---
+
+## dk import
+
+Import skills from API specifications.
+
+```bash
+dk import openapi <spec-file>
+```
+
+Parses OpenAPI/Swagger specs, extracts models from `components/schemas` and routes from `paths`, groups by API path segment, and generates skills with contracts.
+
+```bash
+dk import openapi ./api/openapi.yaml
 ```

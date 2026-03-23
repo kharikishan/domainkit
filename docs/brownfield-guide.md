@@ -67,7 +67,7 @@ Don't try to skill-ify everything at once. Start with:
 
 ```bash
 # Generate skills for all discovered modules
-dk generate --bootstrap --with-contracts
+dk generate --bootstrap --with-contracts --persona domain-expert
 
 # Or target specific modules
 dk generate --bootstrap --modules auth,billing,tasks --with-contracts
@@ -108,6 +108,15 @@ skills/
 | Model field names and types | Why decisions were made |
 | Import dependencies | Non-obvious behaviors |
 | File structure | Testing priorities |
+
+### Use Smart Recommendations
+
+After making code changes, use `dk recommend` to see which skills need attention:
+
+```bash
+dk recommend
+dk recommend --staged
+```
 
 ## Phase 3: Enrich Skills with Domain Knowledge
 
@@ -237,6 +246,16 @@ dk sync --all
 
 # Target specific platform
 dk sync --target claude
+```
+
+`dk sync` copies skills to each platform's standard directory via the Agent Skills standard — one format, every platform.
+
+### Watch Mode
+
+For continuous monitoring during development:
+
+```bash
+dk watch
 ```
 
 ### Start MCP Server (for Claude Desktop)
