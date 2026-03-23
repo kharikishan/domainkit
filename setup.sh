@@ -38,24 +38,24 @@ if ! command -v pnpm &> /dev/null; then
 fi
 echo "  pnpm $(pnpm -v) ... OK"
 
-# Ensure pnpm global bin directory exists
+# Ensure pnpm global bin directory is configured
+# Set PNPM_HOME for this session based on platform
+case "$PLATFORM" in
+  macOS)
+    export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
+    ;;
+  Linux)
+    export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+    ;;
+  "Windows (Git Bash)")
+    export PNPM_HOME="${PNPM_HOME:-$LOCALAPPDATA/pnpm}"
+    ;;
+esac
+export PATH="$PNPM_HOME:$PATH"
+
 if ! pnpm link --global --dry-run &> /dev/null; then
   echo "  Configuring pnpm global bin directory..."
-  pnpm setup
-
-  # Set PNPM_HOME for this session based on platform
-  case "$PLATFORM" in
-    macOS)
-      export PNPM_HOME="$HOME/Library/pnpm"
-      ;;
-    Linux)
-      export PNPM_HOME="$HOME/.local/share/pnpm"
-      ;;
-    "Windows (Git Bash)")
-      export PNPM_HOME="$LOCALAPPDATA/pnpm"
-      ;;
-  esac
-  export PATH="$PNPM_HOME:$PATH"
+  pnpm setup --force 2>/dev/null || true
 fi
 
 # Install dependencies
@@ -68,7 +68,9 @@ echo "  Building..."
 pnpm run build
 
 # Link globally so 'dk' and 'domainkit' commands are available everywhere
+# If already linked, unlink first to ensure a clean update
 echo "  Linking globally..."
+pnpm unlink --global domainkit 2>/dev/null || true
 pnpm link --global
 
 # Shell config hint
