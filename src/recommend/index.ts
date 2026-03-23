@@ -1,6 +1,8 @@
 import { execSync } from 'node:child_process';
 import { minimatch } from 'minimatch';
 import type { Skill, MatchResult } from '../core/types.js';
+import { getSkillDomain, getSkillCodePaths } from '../core/constants.js';
+import * as logger from '../utils/logger.js';
 
 export interface RecommendOptions {
   skills: Skill[];
@@ -29,7 +31,8 @@ export function recommendFromDiff(options: RecommendOptions): MatchResult[] {
   try {
     const output = execSync(diffCmd, { cwd: sourceRoot, encoding: 'utf-8' });
     changedFiles = output.trim().split('\n').filter(Boolean);
-  } catch {
+  } catch (err) {
+    logger.debug(`[domainkit/recommend] git diff failed: ${String(err)}`);
     return [];
   }
 
@@ -39,7 +42,7 @@ export function recommendFromDiff(options: RecommendOptions): MatchResult[] {
   const results: MatchResult[] = [];
 
   for (const skill of skills) {
-    const codePaths = skill.metadata['domainkit-code-paths'] ?? [];
+    const codePaths = getSkillCodePaths(skill);
     if (codePaths.length === 0) continue;
 
     let matchCount = 0;
@@ -56,7 +59,7 @@ export function recommendFromDiff(options: RecommendOptions): MatchResult[] {
       const score = matchCount / changedFiles.length;
       results.push({
         skill: skill.metadata.name,
-        domain: skill.metadata['domainkit-domain'] ?? skill.metadata.domain ?? '',
+        domain: getSkillDomain(skill),
         score,
         strength: score >= 0.5 ? 'strong' : score >= 0.2 ? 'weak' : 'none',
       });

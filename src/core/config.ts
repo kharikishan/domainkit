@@ -1,21 +1,14 @@
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
-import * as AjvModule from 'ajv';
 import type { DomainKitConfig } from './types.js';
 import { fileExists, dirExists, readFileContent, writeFileContent, resolveProjectRoot } from '../utils/fs.js';
 import { parseYaml, stringifyYaml } from '../utils/yaml.js';
+import { createAjv } from '../utils/ajv.js';
 
 const require = createRequire(import.meta.url);
 const configSchema = require('../schemas/config.schema.json') as Record<string, unknown>;
 
-// Ajv v8 may export its constructor as the default or as .default depending on the bundler
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const AjvConstructor: new (...args: unknown[]) => AjvModule.default = (
-  (AjvModule as unknown as { default: typeof AjvModule.default }).default ?? AjvModule
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-) as any;
-
-const ajv = new AjvConstructor({ allErrors: true });
+const ajv = createAjv({ allErrors: true });
 const validateConfigSchema = ajv.compile(configSchema);
 
 export function validateConfig(config: unknown): DomainKitConfig {

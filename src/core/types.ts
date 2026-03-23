@@ -108,7 +108,7 @@ export interface DomainKitConfig {
   };
   drift?: {
     threshold: number;
-    strategies: string[];
+    strategies: DriftStrategyName[];
   };
   context?: {
     defaultBudget: number;
@@ -197,3 +197,6 @@ export interface DriftResult {
 export type OutputFormat = "claude" | "system-prompt" | "markdown";
 
 export type ContextDepth = "index" | "contract" | "full";
+
+/** Supported drift detection strategy names. */
+export type DriftStrategyName = 'staleness' | 'file-coverage' | 'api-routes' | 'model-diff';

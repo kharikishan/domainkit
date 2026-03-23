@@ -1,7 +1,8 @@
-import { join, relative, sep } from 'node:path';
+import { relative, sep } from 'node:path';
 import fg from 'fast-glob';
 import { requireOptional } from '../utils/optional-import.js';
 import type { Skill, Contract, DriftIssue } from '../core/types.js';
+import { METADATA_API_ROUTES } from '../core/constants.js';
 
 // ---------------------------------------------------------------------------
 // ts-morph type shims — only imported at runtime when available
@@ -153,7 +154,7 @@ export async function extractNextjsRoutes(appDir: string): Promise<string[]> {
  * metadata field.  Values are expected to already be formatted as "METHOD /path".
  */
 export function extractSkillRoutes(skill: Skill): string[] {
-  return skill.metadata['domainkit-api-routes'] ?? [];
+  return skill.metadata[METADATA_API_ROUTES] ?? [];
 }
 
 /**

@@ -1,19 +1,13 @@
 import { createRequire } from 'node:module';
-import * as AjvModule from 'ajv';
 import type { Skill, Contract, ValidationResult, ValidationError, ValidationWarning } from './types.js';
 import { readContract } from './skill-reader.js';
+import { METADATA_LAST_VERIFIED, METADATA_DOMAIN, METADATA_VERSION } from './constants.js';
+import { createAjv } from '../utils/ajv.js';
 
 const require = createRequire(import.meta.url);
 const contractSchema = require('../schemas/contract.schema.json') as Record<string, unknown>;
 
-// Ajv v8 may export its constructor as the default or as .default depending on the bundler
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const AjvConstructor: new (...args: unknown[]) => AjvModule.default = (
-  (AjvModule as unknown as { default: typeof AjvModule.default }).default ?? AjvModule
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-) as any;
-
-const ajv = new AjvConstructor();
+const ajv = createAjv();
 const validateContractSchema = ajv.compile(contractSchema);
 
 const RECOMMENDED_SECTIONS = ['Data Models', 'Business Rules', 'API Surface'] as const;
@@ -43,7 +37,7 @@ export function validateSkill(skill: Skill): ValidationResult {
   }
 
   // Optional: domainkit-last-verified must be a valid ISO date if present
-  const lastVerified = skill.metadata['domainkit-last-verified'];
+  const lastVerified = skill.metadata[METADATA_LAST_VERIFIED];
   if (lastVerified !== undefined) {
     if (!ISO_DATE_RE.test(lastVerified) || isNaN(Date.parse(lastVerified))) {
       errors.push({
@@ -52,6 +46,33 @@ export function validateSkill(skill: Skill): ValidationResult {
         message: `'domainkit-last-verified' must be a valid ISO 8601 date string (got: "${lastVerified}").`,
       });
     }
+  }
+
+  // Warning: missing domain
+  if (!skill.metadata[METADATA_DOMAIN] && !skill.metadata.domain) {
+    warnings.push({
+      skill: skillName,
+      field: METADATA_DOMAIN,
+      message: `No domain specified — consider adding ${METADATA_DOMAIN} to the frontmatter`,
+    });
+  }
+
+  // Warning: missing last-verified date
+  if (!skill.metadata[METADATA_LAST_VERIFIED]) {
+    warnings.push({
+      skill: skillName,
+      field: METADATA_LAST_VERIFIED,
+      message: `No last-verified date — consider adding ${METADATA_LAST_VERIFIED}`,
+    });
+  }
+
+  // Warning: missing version
+  if (!skill.metadata[METADATA_VERSION]) {
+    warnings.push({
+      skill: skillName,
+      field: METADATA_VERSION,
+      message: `No ${METADATA_VERSION} specified in frontmatter`,
+    });
   }
 
   // Warning: body should be non-empty

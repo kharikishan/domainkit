@@ -5,34 +5,7 @@ import { resolveProjectRoot } from '../../utils/fs.js';
 import { loadConfig } from '../../core/config.js';
 import { readAllSkills } from '../../core/skill-reader.js';
 import { printTable } from '../ui/table.js';
-import type { ManifestEntry, Manifest } from '../../core/types.js';
-
-function buildManifest(skills: Awaited<ReturnType<typeof readAllSkills>>): Manifest {
-  const entries: ManifestEntry[] = skills.map((skill) => ({
-    name: skill.metadata.name || 'unknown',
-    domain: skill.metadata['domainkit-domain'] ?? skill.metadata.domain ?? '',
-    description: skill.metadata.description ?? '',
-    dependencies: skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies ?? [],
-    codePaths: skill.metadata['domainkit-code-paths'] ?? [],
-    lastVerified: skill.metadata['domainkit-last-verified'] ?? null,
-    filePath: skill.filePath,
-    hasContract: skill.hasContract,
-  }));
-
-  const domains = new Map<string, ManifestEntry[]>();
-  for (const entry of entries) {
-    const key = entry.domain || 'uncategorised';
-    const existing = domains.get(key) ?? [];
-    existing.push(entry);
-    domains.set(key, existing);
-  }
-
-  return {
-    skills: entries,
-    domains,
-    timestamp: new Date().toISOString(),
-  };
-}
+import { buildManifest } from '../../core/manifest.js';
 
 export function register(program: Command): void {
   program
@@ -52,7 +25,7 @@ export function register(program: Command): void {
         const skillsRoot = join(projectRoot, config.skillsDir);
         const skills = await readAllSkills(skillsRoot);
 
-        const manifest = buildManifest(skills);
+        const manifest = buildManifest(skills, 'uncategorised');
 
         let entries = manifest.skills;
 

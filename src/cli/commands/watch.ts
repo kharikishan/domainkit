@@ -6,11 +6,12 @@ import { loadConfig } from '../../core/config.js';
 import { readAllSkills } from '../../core/skill-reader.js';
 import { info, error, success } from '../../utils/logger.js';
 import type { Skill } from '../../core/types.js';
+import { getSkillCodePaths } from '../../core/constants.js';
 
 function findAffectedSkills(changedFile: string, skills: Skill[]): Skill[] {
   const affected: Skill[] = [];
   for (const skill of skills) {
-    const codePaths = skill.metadata['domainkit-code-paths'] ?? [];
+    const codePaths = getSkillCodePaths(skill);
     for (const pattern of codePaths) {
       if (minimatch(changedFile, pattern)) {
         affected.push(skill);

@@ -1,4 +1,5 @@
 import type { AssembledContext, Skill } from '../core/types.js';
+import { getSkillDomain, getSkillDependencies, getSkillCodePaths } from '../core/constants.js';
 
 /**
  * Render an AssembledContext as a CLAUDE.md-style document.
@@ -9,7 +10,7 @@ import type { AssembledContext, Skill } from '../core/types.js';
  *   ## {name}                       <- primary skills (full content per depth)
  *   ## [dep] {name}                 <- dependency skills (index-level summary)
  */
-export function renderClaude(context: AssembledContext, skills: Skill[]): string {
+export function renderClaude(context: AssembledContext, _skills: Skill[]): string {
   const lines: string[] = [];
 
   lines.push('# Domain Context', '');
@@ -22,12 +23,12 @@ export function renderClaude(context: AssembledContext, skills: Skill[]): string
   const domainMap = new Map<string, { names: string[]; status: string }>();
 
   for (const skill of context.primary) {
-    const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'] ?? 'unknown';
+    const domain = getSkillDomain(skill, 'unknown');
     if (!domainMap.has(domain)) domainMap.set(domain, { names: [], status: 'active' });
     domainMap.get(domain)!.names.push(skill.metadata.name);
   }
   for (const skill of context.dependencies) {
-    const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'] ?? 'unknown';
+    const domain = getSkillDomain(skill, 'unknown');
     if (!domainMap.has(domain)) domainMap.set(domain, { names: [], status: 'dependency' });
     domainMap.get(domain)!.names.push(skill.metadata.name);
   }
@@ -49,21 +50,20 @@ export function renderClaude(context: AssembledContext, skills: Skill[]): string
       lines.push(`> ${skill.metadata.description}`, '');
     }
 
-    const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'];
+    const domain = getSkillDomain(skill);
     if (domain) lines.push(`**Domain:** ${domain}  `);
 
-    const deps =
-      skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies;
-    if (Array.isArray(deps) && deps.length > 0) {
+    const deps = getSkillDependencies(skill);
+    if (deps.length > 0) {
       lines.push(`**Dependencies:** ${deps.join(', ')}  `);
     }
 
-    const codePaths = skill.metadata['domainkit-code-paths'];
-    if (Array.isArray(codePaths) && codePaths.length > 0) {
+    const codePaths = getSkillCodePaths(skill);
+    if (codePaths.length > 0) {
       lines.push(`**Code paths:** ${codePaths.join(', ')}  `);
     }
 
-    if (skill.metadata.domain || skill.metadata['domainkit-domain'] || deps) {
+    if (domain || deps.length > 0) {
       lines.push('');
     }
 
@@ -83,12 +83,11 @@ export function renderClaude(context: AssembledContext, skills: Skill[]): string
         lines.push(`> ${skill.metadata.description}`, '');
       }
 
-      const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'];
+      const domain = getSkillDomain(skill);
       if (domain) lines.push(`**Domain:** ${domain}  `);
 
-      const deps =
-        skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies;
-      if (Array.isArray(deps) && deps.length > 0) {
+      const deps = getSkillDependencies(skill);
+      if (deps.length > 0) {
         lines.push(`**Dependencies:** ${deps.join(', ')}  `);
       }
 

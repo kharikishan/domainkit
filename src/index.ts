@@ -14,3 +14,26 @@ export { computeSkillHash, trackVersion, getVersionHistory } from './core/versio
 export { recommendFromDiff } from './recommend/index.js';
 export type { PersonaDefinition, PersonaSection } from './personas/types.js';
 export { listPersonas, getPersona, mergePersonas, loadBuiltinPersonas } from './personas/registry.js';
+
+// Project context service
+export { resolveProjectContext } from './core/project-context.js';
+export type { ProjectContext } from './core/project-context.js';
+
+// Constants & helpers
+export {
+  METADATA_DOMAIN,
+  METADATA_VERSION,
+  METADATA_DEPENDENCIES,
+  METADATA_CODE_PATHS,
+  METADATA_LAST_VERIFIED,
+  METADATA_API_ROUTES,
+  getSkillDomain,
+  getSkillDependencies,
+  getSkillCodePaths,
+} from './core/constants.js';
+
+// Drift detection
+export { runDriftCheck, formatDriftTerminal, formatDriftMarkdown, formatDriftJson } from './drift/reporter.js';
+export { registerStrategy, getStrategy, listStrategies } from './drift/strategy.js';
+export type { DriftStrategyPlugin, DriftStrategyContext } from './drift/strategy.js';
+export type { DriftCheckOptions } from './drift/reporter.js';

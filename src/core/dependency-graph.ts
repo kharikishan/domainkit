@@ -1,10 +1,5 @@
 import type { Skill } from './types.js';
-
-/** Resolve the dependency list for a single skill, checking both metadata fields. */
-function getSkillDependencies(skill: Skill): string[] {
-  const deps = skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies ?? [];
-  return Array.isArray(deps) ? deps : [];
-}
+import { getSkillDependencies } from './constants.js';
 
 /** Build a map of skill name -> list of dependency names. */
 export function buildDependencyGraph(skills: Skill[]): Map<string, string[]> {

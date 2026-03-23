@@ -4,7 +4,8 @@ import chalk from 'chalk';
 import * as logger from '../../utils/logger.js';
 import { resolveProjectRoot } from '../../utils/fs.js';
 import { loadConfig } from '../../core/config.js';
-import { readAllSkills, readSkill, readContract } from '../../core/skill-reader.js';
+import { readAllSkills, readSkill } from '../../core/skill-reader.js';
+import { validateSkill } from '../../core/validator.js';
 import type {
   Skill,
   ValidationError,
@@ -13,66 +14,8 @@ import type {
 } from '../../core/types.js';
 
 // ---------------------------------------------------------------------------
-// Validation logic
+// Result helpers
 // ---------------------------------------------------------------------------
-
-function validateSkill(skill: Skill): ValidationResult {
-  const errors: ValidationError[] = [];
-  const warnings: ValidationWarning[] = [];
-  const skillName = skill.metadata.name || skill.dir;
-
-  // Required fields
-  if (!skill.metadata.name || skill.metadata.name.trim() === '') {
-    errors.push({ skill: skillName, field: 'name', message: 'Missing required field: name' });
-  }
-
-  if (!skill.metadata.description || skill.metadata.description.trim() === '') {
-    errors.push({
-      skill: skillName,
-      field: 'description',
-      message: 'Missing required field: description',
-    });
-  }
-
-  // Recommended fields (warnings)
-  if (!skill.metadata['domainkit-domain'] && !skill.metadata.domain) {
-    warnings.push({
-      skill: skillName,
-      field: 'domainkit-domain',
-      message: 'No domain specified — consider adding domainkit-domain to the frontmatter',
-    });
-  }
-
-  if (!skill.metadata['domainkit-last-verified']) {
-    warnings.push({
-      skill: skillName,
-      field: 'domainkit-last-verified',
-      message: 'No last-verified date — consider adding domainkit-last-verified',
-    });
-  }
-
-  if (!skill.metadata['domainkit-version']) {
-    warnings.push({
-      skill: skillName,
-      field: 'domainkit-version',
-      message: 'No domainkit-version specified in frontmatter',
-    });
-  }
-
-  if (!skill.body || skill.body.trim().length === 0) {
-    warnings.push({
-      skill: skillName,
-      field: 'body',
-      message: 'Skill body is empty — add documentation sections',
-    });
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
-  };
-}
 
 function mergeResults(results: ValidationResult[]): ValidationResult {
   const errors: ValidationError[] = [];

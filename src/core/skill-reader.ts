@@ -3,6 +3,14 @@ import fg from 'fast-glob';
 import type { Skill, SkillMetadata, Contract } from './types.js';
 import { fileExists, readFileContent } from '../utils/fs.js';
 import { parseYaml, parseFrontmatter } from '../utils/yaml.js';
+import {
+  METADATA_VERSION,
+  METADATA_DOMAIN,
+  METADATA_LAST_VERIFIED,
+  METADATA_DEPENDENCIES,
+  METADATA_CODE_PATHS,
+  METADATA_API_ROUTES,
+} from './constants.js';
 
 const SKILL_FILENAME = 'SKILL.md';
 const CONTRACT_RELATIVE_PATH = 'references/contract.yaml';
@@ -70,19 +78,19 @@ function parseDomainkitMetadata(data: Record<string, unknown>): SkillMetadata {
     : undefined;
 
   const domainkitVersion =
-    typeof data['domainkit-version'] === 'string' ? data['domainkit-version'] : undefined;
+    typeof data[METADATA_VERSION] === 'string' ? data[METADATA_VERSION] : undefined;
 
   const domainkitDomain =
-    typeof data['domainkit-domain'] === 'string' ? data['domainkit-domain'] : undefined;
+    typeof data[METADATA_DOMAIN] === 'string' ? data[METADATA_DOMAIN] : undefined;
 
   const domainkitLastVerified =
-    typeof data['domainkit-last-verified'] === 'string'
-      ? data['domainkit-last-verified']
+    typeof data[METADATA_LAST_VERIFIED] === 'string'
+      ? data[METADATA_LAST_VERIFIED]
       : undefined;
 
-  const domainkitDependencies = toStringArray(data['domainkit-dependencies']);
-  const domainkitCodePaths = toStringArray(data['domainkit-code-paths']);
-  const domainkitApiRoutes = toStringArray(data['domainkit-api-routes']);
+  const domainkitDependencies = toStringArray(data[METADATA_DEPENDENCIES]);
+  const domainkitCodePaths = toStringArray(data[METADATA_CODE_PATHS]);
+  const domainkitApiRoutes = toStringArray(data[METADATA_API_ROUTES]);
 
   const metadata: SkillMetadata = {
     name,
@@ -90,12 +98,12 @@ function parseDomainkitMetadata(data: Record<string, unknown>): SkillMetadata {
     ...data,
     ...(domain !== undefined && { domain }),
     ...(dependencies !== undefined && { dependencies }),
-    ...(domainkitVersion !== undefined && { 'domainkit-version': domainkitVersion }),
-    ...(domainkitDomain !== undefined && { 'domainkit-domain': domainkitDomain }),
-    ...(domainkitLastVerified !== undefined && { 'domainkit-last-verified': domainkitLastVerified }),
-    'domainkit-dependencies': domainkitDependencies.length > 0 ? domainkitDependencies : undefined,
-    'domainkit-code-paths': domainkitCodePaths.length > 0 ? domainkitCodePaths : undefined,
-    'domainkit-api-routes': domainkitApiRoutes.length > 0 ? domainkitApiRoutes : undefined,
+    ...(domainkitVersion !== undefined && { [METADATA_VERSION]: domainkitVersion }),
+    ...(domainkitDomain !== undefined && { [METADATA_DOMAIN]: domainkitDomain }),
+    ...(domainkitLastVerified !== undefined && { [METADATA_LAST_VERIFIED]: domainkitLastVerified }),
+    [METADATA_DEPENDENCIES]: domainkitDependencies.length > 0 ? domainkitDependencies : undefined,
+    [METADATA_CODE_PATHS]: domainkitCodePaths.length > 0 ? domainkitCodePaths : undefined,
+    [METADATA_API_ROUTES]: domainkitApiRoutes.length > 0 ? domainkitApiRoutes : undefined,
   };
 
   return metadata;

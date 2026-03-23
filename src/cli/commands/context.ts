@@ -8,6 +8,7 @@ import { renderContext } from '../../formats/index.js';
 import { info, error, success } from '../../utils/logger.js';
 import { writeFileContent } from '../../utils/fs.js';
 import type { OutputFormat, ContextDepth } from '../../core/types.js';
+import { getSkillDomain } from '../../core/constants.js';
 
 export function register(program: Command): void {
   program
@@ -36,7 +37,7 @@ export function register(program: Command): void {
         if (options.domains) {
           selectedSkillNames = skills
             .filter(s => {
-              const domain = (s.metadata['domainkit-domain'] as string) ?? '';
+              const domain = getSkillDomain(s);
               return options.domains.includes(domain);
             })
             .map(s => s.metadata.name);

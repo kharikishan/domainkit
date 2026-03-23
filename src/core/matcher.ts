@@ -1,5 +1,7 @@
 import type { Skill, MatchResult } from './types.js';
 import { requireOptional } from '../utils/optional-import.js';
+import { MATCH_STRONG_THRESHOLD, MATCH_WEAK_THRESHOLD, getSkillDomain } from './constants.js';
+import * as logger from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
 // Stop words list used in the keyword-overlap fallback
@@ -22,8 +24,8 @@ function tokenize(text: string): string[] {
 }
 
 function classifyScore(score: number): 'strong' | 'weak' | 'none' {
-  if (score > 0.3) return 'strong';
-  if (score > 0.1) return 'weak';
+  if (score > MATCH_STRONG_THRESHOLD) return 'strong';
+  if (score > MATCH_WEAK_THRESHOLD) return 'weak';
   return 'none';
 }
 
@@ -57,7 +59,7 @@ function keywordMatch(task: string, skills: Skill[]): MatchResult[] {
     if (strength !== 'none') {
       results.push({
         skill: skill.metadata.name,
-        domain: skill.metadata.domain ?? skill.metadata['domainkit-domain'] ?? 'unknown',
+        domain: getSkillDomain(skill, 'unknown'),
         score,
         strength,
       });
@@ -103,7 +105,7 @@ async function tfidfMatch(task: string, skills: Skill[]): Promise<MatchResult[]>
     if (strength !== 'none') {
       results.push({
         skill: skill.metadata.name,
-        domain: skill.metadata.domain ?? skill.metadata['domainkit-domain'] ?? 'unknown',
+        domain: getSkillDomain(skill, 'unknown'),
         score,
         strength,
       });
@@ -120,8 +122,9 @@ async function tfidfMatch(task: string, skills: Skill[]): Promise<MatchResult[]>
 export async function matchTaskToDomains(task: string, skills: Skill[]): Promise<MatchResult[]> {
   try {
     return await tfidfMatch(task, skills);
-  } catch {
+  } catch (err) {
     // `natural` is not installed — fall back to keyword overlap
+    logger.debug(`[domainkit/matcher] TF-IDF match failed, falling back to keyword overlap: ${String(err)}`);
     return keywordMatch(task, skills);
   }
 }

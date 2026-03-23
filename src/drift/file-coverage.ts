@@ -2,6 +2,8 @@ import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import fg from 'fast-glob';
 import type { Skill, DriftIssue } from '../core/types.js';
+import { getSkillCodePaths, METADATA_LAST_VERIFIED } from '../core/constants.js';
+import * as logger from '../utils/logger.js';
 
 /**
  * Expand code-path glob patterns for a skill and check:
@@ -10,13 +12,13 @@ import type { Skill, DriftIssue } from '../core/types.js';
  */
 export async function checkFileCoverage(skill: Skill, sourceRoot: string): Promise<DriftIssue[]> {
   const issues: DriftIssue[] = [];
-  const codePaths = skill.metadata['domainkit-code-paths'];
+  const codePaths = getSkillCodePaths(skill);
 
-  if (!codePaths || codePaths.length === 0) {
+  if (codePaths.length === 0) {
     return issues;
   }
 
-  const lastVerified = skill.metadata['domainkit-last-verified'];
+  const lastVerified = skill.metadata[METADATA_LAST_VERIFIED];
 
   for (const pattern of codePaths) {
     // Resolve the pattern relative to sourceRoot unless it is already absolute
@@ -94,8 +96,8 @@ function findFilesChangedAfter(
   let stdout: string;
   try {
     stdout = execSync(cmd, { cwd: sourceRoot, encoding: 'utf-8' });
-  } catch {
-    // git may not be available or the directory may not be a repo; skip silently
+  } catch (err) {
+    logger.debug(`[domainkit/drift] git log failed for file coverage check: ${String(err)}`);
     return [];
   }
 

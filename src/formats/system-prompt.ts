@@ -1,4 +1,5 @@
 import type { AssembledContext, Skill } from '../core/types.js';
+import { getSkillDomain, getSkillDependencies, getSkillCodePaths } from '../core/constants.js';
 
 /**
  * Render an AssembledContext as an XML-style system-prompt block.
@@ -17,7 +18,7 @@ import type { AssembledContext, Skill } from '../core/types.js';
  *   </dependency>
  *   </project>
  */
-export function renderSystemPrompt(context: AssembledContext, skills: Skill[]): string {
+export function renderSystemPrompt(context: AssembledContext, _skills: Skill[]): string {
   const lines: string[] = [];
 
   lines.push('<project>');
@@ -32,7 +33,7 @@ export function renderSystemPrompt(context: AssembledContext, skills: Skill[]): 
   // Deduplicate by domain — prefer the primary skill's description
   const seen = new Set<string>();
   for (const skill of [...context.primary, ...context.dependencies]) {
-    const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'] ?? 'unknown';
+    const domain = getSkillDomain(skill, 'unknown');
     if (!seen.has(domain)) {
       seen.add(domain);
       const desc = skill.metadata.description.replace(/\|/g, '\\|');
@@ -54,17 +55,16 @@ export function renderSystemPrompt(context: AssembledContext, skills: Skill[]): 
       lines.push('');
     }
 
-    const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'];
+    const domain = getSkillDomain(skill);
     if (domain) lines.push(`Domain: ${domain}`);
 
-    const deps =
-      skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies;
-    if (Array.isArray(deps) && deps.length > 0) {
+    const deps = getSkillDependencies(skill);
+    if (deps.length > 0) {
       lines.push(`Dependencies: ${deps.join(', ')}`);
     }
 
-    const codePaths = skill.metadata['domainkit-code-paths'];
-    if (Array.isArray(codePaths) && codePaths.length > 0) {
+    const codePaths = getSkillCodePaths(skill);
+    if (codePaths.length > 0) {
       lines.push(`Code paths: ${codePaths.join(', ')}`);
     }
 
@@ -87,12 +87,11 @@ export function renderSystemPrompt(context: AssembledContext, skills: Skill[]): 
       lines.push(skill.metadata.description);
     }
 
-    const domain = skill.metadata.domain ?? skill.metadata['domainkit-domain'];
+    const domain = getSkillDomain(skill);
     if (domain) lines.push(`Domain: ${domain}`);
 
-    const deps =
-      skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies;
-    if (Array.isArray(deps) && deps.length > 0) {
+    const deps = getSkillDependencies(skill);
+    if (deps.length > 0) {
       lines.push(`Dependencies: ${deps.join(', ')}`);
     }
 

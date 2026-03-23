@@ -1,4 +1,5 @@
 import type { Skill, DriftIssue } from '../core/types.js';
+import { METADATA_LAST_VERIFIED } from '../core/constants.js';
 
 /**
  * Check whether a single skill's `domainkit-last-verified` date is older than
@@ -6,7 +7,7 @@ import type { Skill, DriftIssue } from '../core/types.js';
  * when the skill is fresh (or has no last-verified date recorded).
  */
 export function checkStaleness(skill: Skill, thresholdDays: number): DriftIssue | null {
-  const lastVerifiedRaw = skill.metadata['domainkit-last-verified'];
+  const lastVerifiedRaw = skill.metadata[METADATA_LAST_VERIFIED];
 
   if (!lastVerifiedRaw) {
     return {

@@ -50,7 +50,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
     {},
     async () => {
       const { handler } = await import('./tools/list-domains.js');
-      return handler();
+      return handler({});
     },
   );
 
@@ -74,8 +74,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
         'Output format (default: markdown).',
       ),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (args: any) => {
+    async (args: { task?: string; domains?: string[]; budget?: number; format?: string }) => {
       const { handler } = await import('./tools/get-context.js');
       return handler(args);
     },
@@ -95,8 +94,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
         'Detail level: index (summary), contract (metadata + schema), full (body + contract).',
       ),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (args: any) => {
+    async (args: { name: string; depth?: string }) => {
       const { handler } = await import('./tools/get-skill.js');
       return handler(args);
     },
@@ -113,8 +111,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
         'Name of a specific skill to check. Omit to check all skills.',
       ),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (args: any) => {
+    async (args: { skill?: string }) => {
       const { handler } = await import('./tools/check-drift.js');
       return handler(args);
     },
@@ -131,8 +128,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
         'The skill name whose dependency graph should be resolved.',
       ),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (args: any) => {
+    async (args: { skill: string }) => {
       const { handler } = await import('./tools/get-dependencies.js');
       return handler(args);
     },

@@ -1,15 +1,22 @@
 import { join } from 'node:path';
 import type { Manifest, ManifestEntry, Skill } from './types.js';
 import { ensureDir, fileExists, readFileContent, writeFileContent } from '../utils/fs.js';
+import { safeJsonParse } from '../utils/json.js';
+import {
+  getSkillDomain,
+  getSkillDependencies,
+  getSkillCodePaths,
+  METADATA_LAST_VERIFIED,
+} from './constants.js';
 
-export function buildManifest(skills: Skill[]): Manifest {
+export function buildManifest(skills: Skill[], defaultDomain = ''): Manifest {
   const entries: ManifestEntry[] = skills.map((skill) => ({
     name: skill.metadata.name,
-    domain: skill.metadata['domainkit-domain'] ?? skill.metadata.domain ?? '',
+    domain: getSkillDomain(skill, defaultDomain),
     description: skill.metadata.description,
-    dependencies: skill.metadata['domainkit-dependencies'] ?? skill.metadata.dependencies ?? [],
-    codePaths: skill.metadata['domainkit-code-paths'] ?? [],
-    lastVerified: skill.metadata['domainkit-last-verified'] ?? null,
+    dependencies: getSkillDependencies(skill),
+    codePaths: getSkillCodePaths(skill),
+    lastVerified: skill.metadata[METADATA_LAST_VERIFIED] ?? null,
     filePath: skill.filePath,
     hasContract: skill.hasContract,
   }));
@@ -56,7 +63,7 @@ export async function loadManifest(configDir: string): Promise<Manifest | null> 
   if (!(await fileExists(filePath))) {
     return null;
   }
-  const raw = JSON.parse(await readFileContent(filePath));
+  const raw = safeJsonParse<{ skills: ManifestEntry[]; domains: Record<string, ManifestEntry[]>; timestamp: string }>(await readFileContent(filePath));
   const domains = new Map<string, ManifestEntry[]>(Object.entries(raw.domains));
   return {
     skills: raw.skills,
